@@ -160,8 +160,17 @@ class ValuationEngineProductRfrSwap(ValuationEngineProduct):
         self.floating_leg_engine_ = ValuationEngineInterestRateStream(model, valuation_parameters_collection, product.floating_leg, request)
 
     def calculate_value(self):
-        #TODO
-        pass
+        # A swap is just its legs with opposite signs. "Receive" means receive fixed and
+        # pay floating, which the two signs already encode, so the combination is the
+        # same whichever way round the trade is.
+        self.fixed_leg_engine_.calculate_value()
+        self.floating_leg_engine_.calculate_value()
+        self.value_ = (self.fixed_leg_sign_ * self.fixed_leg_engine_.value +
+                       self.floating_leg_sign_ * self.floating_leg_engine_.value)
+        # Cash is tracked separately from PV: a coupon paying exactly on the value date
+        # is cash today, not a discounted future flow.
+        self.cash_ = (self.fixed_leg_sign_ * self.fixed_leg_engine_.cash +
+                      self.floating_leg_sign_ * self.floating_leg_engine_.cash)
 
     def create_cash_flows_report(self):
         return _combine_cashflow_reports([
@@ -215,8 +224,16 @@ class ValuationEngineProductOvernightIndexBasisSwap(ValuationEngineProduct):
                 ("Leg 2 index", self.floating_leg_2_sign_, self.floating_leg_2_engine_)]
 
     def calculate_value(self):
-        #TODO
-        pass
+        # Three components, not two: leg 1 is split into its index part and its spread
+        # part. The split is what makes the spread's own PV, and so its sensitivity,
+        # directly readable, which is the number a basis trader quotes. Summing with the
+        # signs from _legs() reassembles the same total either way.
+        self.value_ = 0.0
+        self.cash_ = 0.0
+        for _, sign, engine in self._legs():
+            engine.calculate_value()
+            self.value_ += sign * engine.value
+            self.cash_ += sign * engine.cash
 
     def create_cash_flows_report(self):
         return _combine_cashflow_reports(self._legs())

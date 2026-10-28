@@ -1,0 +1,261 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\newcommand{\D}[2]{D_{#1}^{#2}}
+\newcommand{\Ec}[2]{\mathbb{E}^{\mathbb{Q}_{#1}}_{t}\!\left[#2\right]}
+
+\title{FRE-GY 9743, Assignment 6, Part I\\[2pt]\large An EUR/USD Forward
+Collateralised in GBP}
+\author{Sumeet Mishra}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Notation}
+
+The assignment's $\mathrm{df}^{[\cdot,\cdot]}$ is a pair, so to keep the derivation
+unambiguous define
+\[
+  \D{c}{y}(T) \;=\;
+  \begin{minipage}[t]{0.68\textwidth}
+  today's value, in currency $y$ at spot, of one unit of currency $y$ paid at $T$,
+  when the trade is fully collateralised in currency $c$.
+  \end{minipage}
+\]
+The self-collateralised case is the ordinary OIS curve:
+$\D{\mathrm{GBP}}{\mathrm{GBP}} = \mathrm{df}^{\mathrm{SONIA}}$,
+$\D{\mathrm{EUR}}{\mathrm{EUR}} = \mathrm{df}^{\mathrm{EuroSTR}}$,
+$\D{\mathrm{USD}}{\mathrm{USD}} = \mathrm{df}^{\mathrm{SOFR}}$.
+
+Section~4 maps this onto the assignment's notation, under both readings of the pair.
+$S(0)$ is EUR/USD spot in the market convention of USD per EUR, and $X_{a\to b}$ is the
+rate converting one unit of $a$ into $b$.
+
+\section{Q1. The valuation formula}
+
+\subsection{Framework}
+
+Under a CSA that is fully collateralised in currency $c$ with the collateral remunerated
+at that currency's overnight rate $c_t$, the collateral account is the numeraire, and the
+value in currency $c$ of any payoff is
+\begin{equation}
+  V^c(t) = \Ec{c}{e^{-\int_t^T c_s\,\mathrm{d}s}\,V^c(T)}.
+  \label{eq:csa}
+\end{equation}
+This is the point of Assignment 4: posting collateral is not settlement, the trade keeps
+its value, and what the collateral earns decides the discount rate.
+
+Apply \eqref{eq:csa} to the single cashflow ``one unit of currency $y$ at $T$'', whose
+value at $T$ in currency $c$ is $X_{y\to c}(T)$:
+\begin{equation}
+  \Ec{c}{e^{-\int_t^T c_s\,\mathrm{d}s}\,X_{y\to c}(T)}
+  \;=\; X_{y\to c}(t)\,\D{c}{y}(t,T),
+  \label{eq:defD}
+\end{equation}
+which is the definition of $\D{c}{y}$ written as a pricing statement. Note the asymmetry
+that drives everything below: the \emph{cashflow} currency is $y$ but the \emph{discount}
+is governed by $c$, so $\D{c}{y}$ is a genuinely two-index object. Only when $c=y$ does it
+collapse to a plain OIS curve.
+
+\subsection{The forward}
+
+Long $N$ EUR of an EUR/USD forward at strike $K$: at $T$ receive $N$ EUR and pay $NK$
+USD. Collateral is GBP, so $c = \mathrm{GBP}$ throughout. Taking GBP as the valuation
+currency and applying \eqref{eq:defD} to each leg,
+\[
+  V^{\mathrm{GBP}}(0)
+  = N\,X_{\mathrm{EUR}\to\mathrm{GBP}}(0)\,\D{\mathrm{GBP}}{\mathrm{EUR}}(T)
+  \;-\; N K\,X_{\mathrm{USD}\to\mathrm{GBP}}(0)\,\D{\mathrm{GBP}}{\mathrm{USD}}(T).
+\]
+Dividing by $X_{\mathrm{USD}\to\mathrm{GBP}}(0)$ to express the result in USD, and using
+$X_{\mathrm{EUR}\to\mathrm{GBP}}/X_{\mathrm{USD}\to\mathrm{GBP}} = X_{\mathrm{EUR}\to\mathrm{USD}} = S$,
+\begin{equation}
+  \boxed{\;
+  V^{\mathrm{USD}}(0)
+  = N\Bigl[\,S(0)\,\D{\mathrm{GBP}}{\mathrm{EUR}}(T)
+  \;-\; K\,\D{\mathrm{GBP}}{\mathrm{USD}}(T)\Bigr].\;}
+  \label{eq:value}
+\end{equation}
+
+Two observations worth stating explicitly, because they are what the question is probing:
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{The collateral currency enters only through the discount factors, and it
+  enters both legs.} It changes neither cashflow. A GBP CSA does not make this a GBP
+  trade.
+\item \textbf{No GBP curve appears.} $\D{\mathrm{GBP}}{\mathrm{GBP}}$ is absent from
+  \eqref{eq:value} because the trade has no GBP cashflow. Posting GBP collateral means
+  GBP governs \emph{how} the EUR and USD legs are discounted; it does not introduce a GBP
+  payment to discount. This is why $\mathrm{df}^{\mathrm{SONIA}}$ turns out not to be
+  needed in Section~3. That looks surprising until the asymmetry in
+  \eqref{eq:defD} is taken seriously.
+\end{itemize}
+
+\section{Q2. The fair forward strike}
+
+The fair strike is the $K$ that makes \eqref{eq:value} vanish:
+\begin{equation}
+  \boxed{\;
+  K^\ast = S(0)\,
+  \frac{\D{\mathrm{GBP}}{\mathrm{EUR}}(T)}{\D{\mathrm{GBP}}{\mathrm{USD}}(T)}.\;}
+  \label{eq:strike}
+\end{equation}
+
+Substituting \eqref{eq:strike} back into \eqref{eq:value} gives the form actually used to
+mark an existing trade:
+\begin{equation}
+  V^{\mathrm{USD}}(0) = N\,\D{\mathrm{GBP}}{\mathrm{USD}}(T)\,\bigl(K^\ast - K\bigr).
+  \label{eq:mtm}
+\end{equation}
+The split in \eqref{eq:mtm} matters for Section~3: the \emph{strike} depends on the
+\emph{ratio} of the two GBP-collateralised curves, while the \emph{value} additionally
+needs one of them on its own.
+
+\section{Q3. Are the five discount factors sufficient?}
+
+\subsection{What is needed, and what is missing}
+
+Equations \eqref{eq:value} and \eqref{eq:strike} require exactly two objects:
+$\D{\mathrm{GBP}}{\mathrm{EUR}}$ and $\D{\mathrm{GBP}}{\mathrm{USD}}$. Of these,
+$\D{\mathrm{GBP}}{\mathrm{USD}}$ is supplied directly. \textbf{Strictly,
+$\D{\mathrm{GBP}}{\mathrm{EUR}}$ is not in the list}. The EUR curve under GBP
+collateral is precisely the one that is absent.
+
+So the literal answer is: not sufficient as a matter of pure bookkeeping. The useful
+answer is that the missing curve is \emph{constructible} from the rest, provided one
+additional assumption is stated rather than smuggled in.
+
+\subsection{The assumption that closes the gap}
+
+The relevant assumption is that a fully collateralised FX forward has the same fair rate
+regardless of which currency the CSA specifies. Equivalently: for any pair $(a,b)$ and any
+collateral currency $c$,
+\begin{equation}
+  F_{a\to b}(T) = X_{a\to b}(0)\,\frac{\D{c}{a}(T)}{\D{c}{b}(T)}
+  \quad\text{is independent of } c.
+  \label{eq:consistency}
+\end{equation}
+In basis language this is triangular consistency of the cross-currency bases: writing
+$\D{c}{y} = \D{y}{y}\exp\bigl(-\!\int b_{c,y}\bigr)$, \eqref{eq:consistency} is the
+statement $b_{\mathrm{GBP},\mathrm{EUR}} = b_{\mathrm{GBP},\mathrm{USD}} -
+b_{\mathrm{EUR},\mathrm{USD}}$. It is the assumption every curve desk makes when building
+a non-USD-collateral basis, because USD is the hub currency where cross-currency swap
+liquidity actually sits.
+
+Applying \eqref{eq:consistency} to the EUR/USD pair with $c = \mathrm{GBP}$ and
+$c = \mathrm{EUR}$:
+\[
+  \frac{\D{\mathrm{GBP}}{\mathrm{EUR}}}{\D{\mathrm{GBP}}{\mathrm{USD}}}
+  = \frac{\D{\mathrm{EUR}}{\mathrm{EUR}}}{\D{\mathrm{EUR}}{\mathrm{USD}}}
+  \qquad\Longrightarrow\qquad
+  \D{\mathrm{GBP}}{\mathrm{EUR}}
+  = \D{\mathrm{GBP}}{\mathrm{USD}}\;
+    \frac{\D{\mathrm{EUR}}{\mathrm{EUR}}}{\D{\mathrm{EUR}}{\mathrm{USD}}},
+\]
+and every term on the right is supplied. \textbf{So the answer is yes: sufficient,
+conditional on \eqref{eq:consistency}.}
+
+\subsection{What the formulas collapse to}
+
+Substituting into \eqref{eq:strike}, the GBP factor cancels:
+\begin{equation}
+  K^\ast
+  = S(0)\,\frac{\D{\mathrm{EUR}}{\mathrm{EUR}}(T)}{\D{\mathrm{EUR}}{\mathrm{USD}}(T)}
+  = S(0)\,
+  \frac{\mathrm{df}^{\mathrm{EuroSTR}}(T)}{\mathrm{df}^{[\mathrm{EUR},\mathrm{USD}]}(T)} .
+  \label{eq:strike_final}
+\end{equation}
+
+This is the whole content of the question in one line. \textbf{The fair strike does not
+depend on the collateral currency at all.} That is not a coincidence or a lucky
+cancellation. It is \eqref{eq:consistency} restated, since that assumption says exactly
+that the forward rate is collateral-invariant. A GBP CSA buys you nothing and costs you
+nothing on a trade struck at the market.
+
+The value of an \emph{off-market} forward is a different matter. From \eqref{eq:mtm},
+\begin{equation}
+  V^{\mathrm{USD}}(0)
+  = N\,\mathrm{df}^{[\mathrm{GBP},\mathrm{USD}]}(T)\,(K^\ast - K),
+  \label{eq:mtm_final}
+\end{equation}
+and here the GBP collateralisation genuinely bites: the payoff $(K^\ast - K)$ is discounted
+on the GBP-collateralised USD curve, not on SOFR. Two desks holding the same trade under
+different CSAs agree on the fair strike and disagree on the mark.
+
+\subsection{Which of the five are actually used}
+
+\begin{center}
+\begin{tabular}{llc}
+\toprule
+Curve & Role & Needed? \\
+\midrule
+$\mathrm{df}^{\mathrm{EuroSTR}}$          & numerator of the strike \eqref{eq:strike_final}      & yes \\
+$\mathrm{df}^{[\mathrm{EUR},\mathrm{USD}]}$ & denominator of the strike \eqref{eq:strike_final}   & yes \\
+$\mathrm{df}^{[\mathrm{GBP},\mathrm{USD}]}$ & discounting of the mark \eqref{eq:mtm_final}        & yes \\
+$\mathrm{df}^{\mathrm{SOFR}}$             & USD under \emph{USD} collateral; wrong CSA here      & no \\
+$\mathrm{df}^{\mathrm{SONIA}}$            & GBP cashflows; the trade has none                    & no \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Two of the five are redundant for this trade, and the two that are redundant are the ones
+a careless answer reaches for first: SONIA because the collateral is GBP, SOFR because the
+trade settles in USD. Neither reason survives \eqref{eq:defD}. SOFR would be needed if the
+CSA were in USD; SONIA only if the trade paid GBP.
+
+\subsection{Mapping to the assignment's notation}
+
+The pair $\mathrm{df}^{[\cdot,\cdot]}$ admits two readings, and the structural answer is
+the same either way; only the arithmetic route changes.
+
+\begin{description}[leftmargin=*,style=nextline]
+\item[Reading A, $\mathrm{df}^{[c,y]}$ is cashflow $y$ under collateral $c$
+  (used above).]
+  $\mathrm{df}^{[\mathrm{GBP},\mathrm{USD}]} = \D{\mathrm{GBP}}{\mathrm{USD}}$ is given
+  directly, and $\D{\mathrm{GBP}}{\mathrm{EUR}}$ is built as above. SONIA and SOFR are
+  unused.
+\item[Reading B, $\mathrm{df}^{[y,c]}$ is cashflow $y$ under collateral $c$.]
+  Now $\mathrm{df}^{[\mathrm{EUR},\mathrm{USD}]} = \D{\mathrm{USD}}{\mathrm{EUR}}$ and
+  $\mathrm{df}^{[\mathrm{GBP},\mathrm{USD}]} = \D{\mathrm{USD}}{\mathrm{GBP}}$. Applying
+  \eqref{eq:consistency} to EUR/USD gives the strike straight off USD-collateral curves,
+  $K^\ast = S(0)\,\mathrm{df}^{[\mathrm{EUR},\mathrm{USD}]}/\mathrm{df}^{\mathrm{SOFR}}$,
+  and applying it to the USD/GBP pair gives the discounting curve
+  $\D{\mathrm{GBP}}{\mathrm{USD}} = \mathrm{df}^{\mathrm{SONIA}}\,
+  \mathrm{df}^{\mathrm{SOFR}}/\mathrm{df}^{[\mathrm{GBP},\mathrm{USD}]}$. Here four of
+  the five are used and EuroSTR is the redundant one.
+\end{description}
+
+Under either reading: sufficient given \eqref{eq:consistency}, the strike is
+collateral-independent, and the GBP CSA shows up only in the discounting of the mark.
+
+\subsection{When the assumption fails}
+
+Equation \eqref{eq:consistency} is a modelling choice, not a theorem, and it is worth
+being precise about where it breaks:
+
+\begin{enumerate}[label=\arabic*.,leftmargin=*]
+\item \textbf{A directly quoted EUR/GBP basis.} The triangulated
+  $\D{\mathrm{GBP}}{\mathrm{EUR}}$ is only as good as the claim that EUR/GBP basis equals
+  GBP/USD minus EUR/USD. EUR/GBP cross-currency swaps do trade, and when the quoted basis
+  differs from the triangulated one, the constructed curve is simply wrong. If that market
+  is liquid at the relevant tenor, build $\D{\mathrm{GBP}}{\mathrm{EUR}}$ from it directly
+  and treat the identity as a check rather than as the source.
+\item \textbf{Collateral optionality.} A multi-currency CSA that lets the poster choose
+  which currency to deliver makes the discount curve an option on the cheapest-to-deliver
+  basis, not a curve at all. Then no set of single-currency discount factors is
+  sufficient, however large. The question specifies GBP collateral, which avoids this,
+  but it is the first thing to confirm in the actual CSA, because the phrase ``collateralised
+  in GBP'' is often shorthand for ``GBP is one of the eligible currencies''.
+\item \textbf{Collateral convexity.} \eqref{eq:consistency} holds exactly under
+  deterministic rates and FX. With both stochastic, correlation between the collateral
+  rate and the FX rate puts a convexity correction between the collateral-adjusted
+  curves. It is second-order and routinely ignored for short tenors, which is the honest
+  reason the identity is used rather than any claim that it is exact.
+\end{enumerate}
+
+\end{document}
